@@ -5,7 +5,7 @@ description = "Agentic platform that unifies dealer support workflows with orche
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "adk",
+    "google-adk",
 ]
 
 [build-system]
