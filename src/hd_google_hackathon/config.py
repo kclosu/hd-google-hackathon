@@ -1,0 +1,1 @@
+DEFAULT_MODEL = "gemini-pro"
