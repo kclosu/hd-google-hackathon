@@ -62,10 +62,10 @@ docker build -t hd-google-hackathon:latest .
 Run the container (the project requested startup command):
 
 ```bash
-docker run --rm -p 8080:8080 hd-google-hackathon:latest
+docker run --rm -p 8000:8000 hd-google-hackathon:latest
 ```
 
-Or with docker-compose (maps port 8080 and mounts the repo for live edits):
+Or with docker-compose (maps port 8000 and mounts the repo for live edits):
 
 ```bash
 docker compose up --build
@@ -74,9 +74,9 @@ docker compose up --build
 The container starts with the command:
 
 ```
-adk web src/hd_google_hackathon/agents --host 0.0.0.0 --port 8080
+adk web src/hd_google_hackathon/agents --host 0.0.0.0 --port 8000
 ```
 
 The ADK web UI will be available on the host at:
 
-http://localhost:8080/
+http://localhost:8000/
