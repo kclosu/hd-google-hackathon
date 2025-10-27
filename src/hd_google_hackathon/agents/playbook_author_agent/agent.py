@@ -1,5 +1,5 @@
 from google.adk.agents import Agent
-from src.hd_google_hackathon.config import DEFAULT_MODEL
+from hd_google_hackathon.config import DEFAULT_MODEL
 
 def summarize_case(case_id: str) -> dict:
     """Summarizes a resolved case into a reusable playbook."""

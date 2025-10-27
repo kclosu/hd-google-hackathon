@@ -1,14 +1,15 @@
-import time
-import sys
 import os
+import sys
+import time
+
 
 # Import all the agents
-from src.hd_google_hackathon.agents.support_triage_agent import agent as support_triage_agent
-from src.hd_google_hackathon.agents.investigation_agent import agent as investigation_agent
-from src.hd_google_hackathon.agents.policy_compliance_agent import agent as policy_compliance_agent
-from src.hd_google_hackathon.agents.erp_sherpa_agent import agent as erp_sherpa_agent
-from src.hd_google_hackathon.agents.playbook_author_agent import agent as playbook_author_agent
-from src.hd_google_hackathon.agents.metrics_insight_agent import agent as metrics_insight_agent
+from hd_google_hackathon.agents.support_triage_agent import agent as support_triage_agent
+from hd_google_hackathon.agents.investigation_agent import agent as investigation_agent
+from hd_google_hackathon.agents.policy_compliance_agent import agent as policy_compliance_agent
+from hd_google_hackathon.agents.erp_sherpa_agent import agent as erp_sherpa_agent
+from hd_google_hackathon.agents.playbook_author_agent import agent as playbook_author_agent
+from hd_google_hackathon.agents.metrics_insight_agent import agent as metrics_insight_agent
 
 # --- ANSI Color Codes for beautiful terminal output ---
 class colors:

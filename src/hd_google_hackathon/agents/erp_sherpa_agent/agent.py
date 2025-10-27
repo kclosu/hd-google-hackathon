@@ -1,5 +1,5 @@
 from google.adk.agents import Agent
-from src.hd_google_hackathon.config import DEFAULT_MODEL
+from hd_google_hackathon.config import DEFAULT_MODEL
 
 def update_shipment_priority(order_id: str, priority: str) -> dict:
     """Updates the shipment priority for a given order ID."""

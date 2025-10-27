@@ -1,5 +1,5 @@
 from google.adk.agents import Agent
-from src.hd_google_hackathon.config import DEFAULT_MODEL
+from hd_google_hackathon.config import DEFAULT_MODEL
 
 def synthesize_kpis() -> dict:
     """Synthesizes operational KPIs from various data sources."""

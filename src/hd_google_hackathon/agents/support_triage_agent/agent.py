@@ -1,5 +1,5 @@
 from google.adk.agents import Agent
-from src.hd_google_hackathon.config import DEFAULT_MODEL
+from hd_google_hackathon.config import DEFAULT_MODEL
 
 def classify_request(request: str) -> dict:
     """Classifies the type of inbound request (e.g., ticket, chat)."""
