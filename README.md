@@ -1,5 +1,18 @@
 # Agentic Platform for the manufacturer
 
+## Project Structure
+
+```
+hd-google-hackathon/
+├── docs/                      # Design notes and architecture references
+├── mock_data/                 # Python fixtures and sample data for tests
+├── src/
+│   └── hd_google_hackathon/   # Runtime package (empty scaffold for now)
+└── tests/                     # Pytest suites mirroring src/ for coverage
+```
+
+Run `python main.py` for a quick smoke check, or `pytest` once additional tests are added (the suite exercises the `mock_data` fixtures).
+
 ## North Star & Guardrails
 
 * Unify internal support experience around dealer-facing issues without forcing a single dealer tech stack; rely on protocols, data contracts, and lightweight adapters.
