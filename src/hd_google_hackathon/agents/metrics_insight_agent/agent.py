@@ -11,12 +11,18 @@ def surface_systemic_issues() -> dict:
     return {"status": "success", "issues": ["Recurring part shortages for product X"]}
 
 def provide_insights() -> dict:
-    """Provides data-driven insights to support business decisions.""""
+    """Provides data-driven insights to support business decisions."""
     # Placeholder implementation
     return {"status": "success", "insights": ["Dealer training for product Y needs improvement."]}
 
+def print_dealer() -> dict:
+    """Prints dealer information."""
+    # Placeholder implementation
+    return {"status": "success", "dealer": str(d)}
+
 
 root_agent = Agent(
+    model='gemini-2.5-flash',
     name="metrics_insight_agent",
     description="Synthesizes operational KPIs, surfacing systemic issues (e.g., recurring part shortages or dealer training gaps).",
     tools=[
