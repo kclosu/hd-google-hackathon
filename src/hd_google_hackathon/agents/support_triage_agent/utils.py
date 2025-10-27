@@ -1,12 +1,3 @@
-import os
-import json
-from dotenv import load_dotenv
-
-from google.adk.agents import Agent
-from google import genai
-
-# from utils import SYSTEM_PROMPT_AFTERSALES, SYSTEM_PROMPT_QUOTES
-
 # System prompts for quote and aftersales triage agent
 
 
@@ -169,53 +160,3 @@ Respond **only** with a valid Python dictionary in exactly this shape:
 }}
 
 Do not include any explanation or extra text outside the Python dictionary."""
-
-
-load_dotenv()
-
-CLIENT = genai.Client(
-    vertexai=True,
-    project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-    location=os.getenv("GOOGLE_CLOUD_LOCATION"),
-)
-
-def classify_request_tools(user_prompt: str, model_name: str = "gemini-2.0-flash") -> dict:
-    """Classifies the type of inbound request (e.g., Order, Technical Support, etc....)."""
-
-    response = CLIENT.models.generate_content(
-        model=model_name,
-        contents=[SYSTEM_PROMPT_AFTERSALES, user_prompt],
-    )
-    return json.loads(response.text)
-
-
-def aftersales_triage_tool(user_prompt: str, model_name: str = "gemini-2.0-flash") -> str:
-    """Classifies and triages aftersales requests."""
-
-    response = CLIENT.models.generate_content(
-        model=model_name,
-        contents=[SYSTEM_PROMPT_AFTERSALES, user_prompt],
-    )
-    return json.loads(response.text)
-
-
-def quote_triage_tool(user_prompt: str, model_name: str = "gemini-2.0-flash") -> str:
-    """Classifies and triages quotes requests."""
-
-    response = CLIENT.models.generate_content(
-        model=model_name,
-        contents=[SYSTEM_PROMPT_QUOTES, user_prompt],
-    )
-    return json.loads(response.text)
-
-
-root_agent = Agent(
-    model="gemini-2.0-flash",
-    name="support_triage_agent",
-    description="Agent to classify and triage support requests into aftersales or quotes cases",
-    instruction="""Leverage the classify_request_tools tool to comeup with the correct label.
-                   the support request and triage accordingly. If the label is 'Pricing & Quotes', use the quote_triage_tool to triage the request.
-                   "If the label is anything related to Aftersales, like 'Technical Support' or 'Claims', use the aftersales_triage_tool to triage the request.
-                   Else, respond with a message indicating that the request did not need triaging.""",
-    tools=[classify_request_tools, aftersales_triage_tool, quote_triage_tool],
-)
