@@ -16,11 +16,12 @@ def route_request(request: str) -> dict:
     return {"status": "success", "queue": "general_support"}
 
 def extract_sla(request: str) -> dict:
-    """Automatically extracts and sets Service Level Agreement (SLA) timers.""""
+    """Automatically extracts and sets Service Level Agreement (SLA) timers."""
     # Placeholder implementation
     return {"status": "success", "sla": "24 hours"}
 
 root_agent = Agent(
+    model='gemini-2.5-flash',
     name="support_triage_agent",
     description="Classifies inbound tickets/chats, enriches with dealer context, routes to correct queue, auto-extracts SLA timers.",
     tools=[classify_request, enrich_request, route_request, extract_sla],
