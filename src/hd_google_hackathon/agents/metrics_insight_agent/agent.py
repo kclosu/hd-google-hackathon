@@ -11,7 +11,7 @@ def surface_systemic_issues() -> dict:
     return {"status": "success", "issues": ["Recurring part shortages for product X"]}
 
 def provide_insights() -> dict:
-    """Provides data-driven insights to support business decisions.""""
+    """Provides data-driven insights to support business decisions."""
     # Placeholder implementation
     return {"status": "success", "insights": ["Dealer training for product Y needs improvement."]}
 
