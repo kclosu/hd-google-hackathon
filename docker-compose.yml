@@ -7,7 +7,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/claritas:rw
       - ./vertex-ai-key.json:/secrets/vertex-ai-key.json:ro
     ports:
       - "8000:8000"
