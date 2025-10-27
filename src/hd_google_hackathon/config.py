@@ -1,1 +1,1 @@
-DEFAULT_MODEL = "gemini-pro"
+DEFAULT_MODEL = "gemini-2.5-flash"
