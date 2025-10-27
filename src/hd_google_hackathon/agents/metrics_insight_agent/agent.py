@@ -14,11 +14,6 @@ def provide_insights() -> dict:
     # Placeholder implementation
     return {"status": "success", "insights": ["Dealer training for product Y needs improvement."]}
 
-def print_dealer() -> dict:
-    """Prints dealer information."""
-    # Placeholder implementation
-    return {"status": "success", "dealer": str(d)}
-
 
 root_agent = Agent(
     name="metrics_insight_agent",
