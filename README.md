@@ -50,3 +50,33 @@ Run `python main.py` for a quick smoke check, or `pytest` once additional tests 
 * Long-term episodic memory: case notebook capturing prior resolutions, linked to dealers/products; supports personalization and avoids repeat questions.
 * Knowledge graph: Entities (Product, Component, Order, Dealer, Region, Claim, Installer) with edges describing dependencies, warranties, responsibilities; fed by ERP snapshots, ticket outcomes, and manually curated data; enables root cause analysis and agent reasoning.
 * Vector store: embeddings of manuals, SOPs, regional regulations, dealer agreements; used for retrieval-augmented responses.
+
+## Docker
+
+Build the Docker image:
+
+```bash
+docker build -t hd-google-hackathon:latest .
+```
+
+Run the container (the project requested startup command):
+
+```bash
+docker run --rm -p 8080:8080 hd-google-hackathon:latest
+```
+
+Or with docker-compose (maps port 8080 and mounts the repo for live edits):
+
+```bash
+docker compose up --build
+```
+
+The container starts with the command:
+
+```
+adk web src/hd_google_hackathon/agents --host 0.0.0.0 --port 8080
+```
+
+The ADK web UI will be available on the host at:
+
+http://localhost:8080/
