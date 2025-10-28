@@ -4,15 +4,7 @@ It includes the `Product` dataclass, which represents a product with its
 attributes such as ID, name, description, and a list of component IDs.
 The module also provides a predefined list of `Product` instances.
 """
-from dataclasses import dataclass, field
-from typing import List
-
-@dataclass
-class Product:
-    id: str
-    name: str
-    description: str
-    components: List[str] = field(default_factory=list)
+from hd_google_hackathon.domain.product import Product
 
 products = [
     Product(

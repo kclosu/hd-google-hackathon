@@ -1,17 +1,21 @@
 # Agentic Platform for the manufacturer
 
+## Flows
+
+For a detailed description of the interaction flows, see [flows.md](flows.md).
+
 ## Project Structure
 
 ```
 hd-google-hackathon/
 ├── docs/                      # Design notes and architecture references
-├── mock_data/                 # Python fixtures and sample data for tests
-├── src/
+├── tests/                     # Pytest suites mirroring src/ for coverage
+│   └── mocks/                 # Mock data and repositories for tests
 │   └── hd_google_hackathon/   # Runtime package (empty scaffold for now)
 └── tests/                     # Pytest suites mirroring src/ for coverage
 ```
 
-Run `python main.py` for a quick smoke check, or `pytest` once additional tests are added (the suite exercises the `mock_data` fixtures).
+Run `python main.py` for a quick smoke check, or `pytest` once additional tests are added (the suite exercises the mock data fixtures).
 
 ## North Star & Guardrails
 

@@ -1,11 +1,5 @@
 
-from dataclasses import dataclass
-
-@dataclass
-class Dealer:
-    id: str
-    name: str
-    region: str
+from hd_google_hackathon.domain.dealer import Dealer
 
 dealers = [
     Dealer(id="dealer_1", name="The Shade Store", region="USA"),

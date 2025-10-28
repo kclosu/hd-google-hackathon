@@ -5,11 +5,19 @@ import time
 
 # Import all the agents
 from hd_google_hackathon.agents.support_triage_agent import agent as support_triage_agent
-from hd_google_hackathon.agents.investigation_agent import agent as investigation_agent
+from hd_google_hackathon.agents.investigation_agent import create_agent as create_investigation_agent
 from hd_google_hackathon.agents.policy_compliance_agent import agent as policy_compliance_agent
 from hd_google_hackathon.agents.erp_sherpa_agent import agent as erp_sherpa_agent
 from hd_google_hackathon.agents.playbook_author_agent import agent as playbook_author_agent
-from hd_google_hackathon.agents.metrics_insight_agent import agent as metrics_insight_agent
+from hd_google_hackathon.agents.installer_support_agent import agent as installer_support_agent
+from tests.mocks.mock_product_repository import MockProductRepository
+from tests.mocks.mock_order_repository import MockOrderRepository
+from tests.mocks.mock_component_repository import MockComponentRepository
+
+# Create the agent with the appropriate repository
+product_repo = MockProductRepository()
+installer_support_agent.root_agent = installer_support_agent.create_agent(product_repo=product_repo)
+
 
 # --- ANSI Color Codes for beautiful terminal output ---
 class colors:
@@ -51,6 +59,14 @@ def main():
     print_narrator("Welcome to the live demo of our Autonomous Operations Platform.")
     print_narrator("We're about to witness a critical support issue being resolved in real-time, with zero human intervention.")
     
+    # 0. Setup
+from hd_google_hackathon.agents.investigation_agent import create_agent as create_investigation_agent
+
+investigation_agent = create_investigation_agent(
+    order_repo=MockOrderRepository(),
+    component_repo=MockComponentRepository()
+)
+
     # 1. A new support request arrives
     dealer_request = "Our high-priority order #12345 for a T-800 endoskeleton is delayed! Our customer has a deadline. We need answers NOW."
     print_system_event(f"INCOMING REQUEST from 'Cyberdyne Systems': {dealer_request}")
@@ -70,15 +86,20 @@ def main():
 
     # 3. Investigation Agent takes over
     print_narrator("The Investigation Agent is now autonomously diagnosing the problem...")
-    print_agent_activity("Investigation Agent", "INVESTIGATION_START for order #12345.")
-    order_history = investigation_agent.pull_order_history(order_id="12345")
+    print_agent_activity("Investigation Agent", "INVESTIGATION_START for order #order_1 for tenant dealer_1.")
+    order_history = investigation_agent.tools[0](order_id="order_1", tenant_id="dealer_1")
     print_agent_activity("Investigation Agent", f"Calling ERP Sherpa Agent -> Get order details. SUCCESS: {order_history['history']}")
-    shipment_telemetry = investigation_agent.pull_shipment_telemetry(order_id="12345")
+
+    print_agent_activity("Investigation Agent", "INVESTIGATION_START for order #order_2 for tenant dealer_2.")
+    order_history_2 = investigation_agent.tools[0](order_id="order_2", tenant_id="dealer_2")
+    print_agent_activity("Investigation Agent", f"Calling ERP Sherpa Agent -> Get order details. {colors.FAIL}FAILURE: {order_history_2['message']}{colors.ENDC}")
+
+    shipment_telemetry = investigation_agent.tools[2](order_id="12345")
     print_agent_activity("Investigation Agent", f"Calling Logistics API -> Get shipment telemetry. {colors.FAIL}SUCCESS: {shipment_telemetry['telemetry']}{colors.ENDC}")
     print_agent_activity("Investigation Agent", "ANOMALY_DETECTED. The order is stalled. Searching for a solution...")
     print_agent_activity("Investigation Agent", "Calling Inventory System -> Query for component 'CPU-001' across all North American plants.")
     print_agent_activity("Investigation Agent", f"{colors.GREEN}SUCCESS: 'US-East' plant is out of stock. 'US-West' plant has 5 units available.{colors.ENDC}")
-    resolution = investigation_agent.propose_resolution(anomalies=[])
+    resolution = investigation_agent.tools[4](anomalies=[])
     print_agent_activity("Investigation Agent", f"SOLUTION_PROPOSED: {resolution['resolution']}")
     print("-"*50)
     time.sleep(2)

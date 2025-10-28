@@ -1,11 +1,5 @@
 
-from dataclasses import dataclass
-
-@dataclass
-class Plant:
-    id: str
-    name: str
-    location: str
+from hd_google_hackathon.domain.plant import Plant
 
 plants = [
     Plant(id="plant_1", name="Fabric Plant", location="Georgia, USA"),

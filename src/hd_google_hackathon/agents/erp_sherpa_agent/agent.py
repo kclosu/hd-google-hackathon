@@ -9,9 +9,12 @@ def get_erp_variant(order_id: str) -> str:
     """Determines the ERP variant for a given order ID."""
     return "erp_variant_1"
 
-root_agent = Agent(
-    name="erp_sherpa_agent",
-    model=DEFAULT_MODEL,
-    description="Encapsulates knowledge of each ERP variant via tool connectors; translates high-level intents (“update shipment priority”) into correct transactions.",
-    tools=[update_shipment_priority],
-)
+def create_agent() -> Agent:
+    return Agent(
+        name="erp_sherpa_agent",
+        model=DEFAULT_MODEL,
+        description="Encapsulates knowledge of each ERP variant via tool connectors; translates high-level intents (“update shipment priority”) into correct transactions.",
+        tools=[update_shipment_priority],
+    )
+
+root_agent = create_agent()
