@@ -185,13 +185,13 @@ from pydantic import BaseModel, Field
 class Classification(BaseModel):
     """The classification of the request."""
     label: str = Field(..., description="The classification label.")
-    summary: str | None = Field(None, description="A summary of the request.")
+    summary: str = Field("", description="A summary of the request.")
     reasoning: str = Field(..., description="The reasoning for the classification.")
 
 
 from google.genai import types
 
-def classify_request_tools(user_prompt: str, model_name: str = "gemini-2.0-flash") -> Classification:
+def classify_request(user_prompt: str, model_name: str = "gemini-2.0-flash") -> Classification:
     """Classifies the type of inbound request (e.g., Order, Technical Support, etc....)."""
 
     response = CLIENT.models.generate_content(
@@ -238,7 +238,7 @@ def create_agent() -> Agent:
                    the support request and triage accordingly. If the label is 'Pricing & Quotes', use the quote_triage_tool to triage the request.
                    "If the label is anything related to Aftersales, like 'Technical Support' or 'Claims', use the aftersales_triage_tool to triage the request.
                    Else, respond with a message indicating that the request did not need triaging.""",
-        tools=[classify_request_tools, aftersales_triage_tool, quote_triage_tool],
+        tools=[classify_request, aftersales_triage_tool, quote_triage_tool],
     )
 
 root_agent = create_agent()
