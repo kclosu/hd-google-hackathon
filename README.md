@@ -1,23 +1,50 @@
 # Agentic Platform for the manufacturer
 
+## Flows
+
+For a detailed description of the interaction flows, see [flows.md](flows.md).
+
 ## Project Structure
 
 ```
 hd-google-hackathon/
 ├── docs/                      # Design notes and architecture references
-├── mock_data/                 # Python fixtures and sample data for tests
-├── src/
+├── tests/                     # Pytest suites mirroring src/ for coverage
+│   └── mocks/                 # Mock data and repositories for tests
 │   └── hd_google_hackathon/   # Runtime package (empty scaffold for now)
 └── tests/                     # Pytest suites mirroring src/ for coverage
 ```
 
-Run `python main.py` for a quick smoke check, or `pytest` once additional tests are added (the suite exercises the `mock_data` fixtures).
+Run `python main.py` for a quick smoke check, or `pytest` once additional tests are added (the suite exercises the mock data fixtures).
+
+## Development Setup
+
+Use [uv](https://docs.astral.sh/uv/) for dependency and workflow management.
+- Install `uv` (see the linked docs for platform-specific steps).
+- Sync dependencies with `uv sync --extra dev` to pull runtime and dev tooling (pytest, pytest-asyncio, etc.).
+- Alternatively, install editable dependencies with `uv pip install -e ".[dev]"` if you prefer to control environment activation manually.
+- Run project commands through uv, e.g. `uv run python main.py` for a smoke check or `uv run pytest` for the test suite.
+- Explore the agent catalog with `uv run adk web src/hd_google_hackathon/agents`, which serves the ADK web UI for local development.
 
 ## North Star & Guardrails
 
 * Unify internal support experience around dealer-facing issues without forcing a single dealer tech stack; rely on protocols, data contracts, and lightweight adapters.
 * Target measurable reductions in mean time to resolution, cross-region escalation effort, and redundant ERP queries to prove value.
 * Design for regional compliance (data residency, consent) by making federation, tenancy controls, and policy-aware routing first-class.
+
+## Key Concept: Privacy Boundaries & Data Ownership
+
+**Privacy Boundaries**
+- End customer PII stays with dealers
+- Manufacturer sees anonymized/aggregated customer data
+- Group-owned dealers share more data than independent dealers
+- Dealer performance data visible only to relevant parties
+
+**Data Ownership**
+- Dealers control customer data
+- Manufacturer gets insights, not raw customer data
+- Opt-in sharing for group-owned dealers
+- Compliance with data protection regulations
 
 ## Layered Architecture
 

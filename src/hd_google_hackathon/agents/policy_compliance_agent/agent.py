@@ -2,26 +2,22 @@ from google.adk.agents import Agent
 from hd_google_hackathon.config import DEFAULT_MODEL
 
 def check_regional_rules(action: str) -> dict:
-    """Checks the action against regional rules."""
-    return {"status": "success", "compliant": True}
+    """Checks if the proposed action complies with regional rules."""
+    return {"compliant": True}
 
 def check_warranty_terms(action: str) -> dict:
-    """Checks the action against warranty terms."""
-    return {"status": "success", "compliant": True}
+    """Checks if the proposed action complies with warranty terms."""
+    return {"compliant": True}
 
-def check_data_sharing_agreements(action: str) -> dict:
-    """Checks the action against data-sharing agreements."""
-    # Placeholder implementation
-    return {"status": "success", "compliant": True}
+def create_agent() -> Agent:
+    return Agent(
+        name="policy_compliance_agent",
+        model=DEFAULT_MODEL,
+        description="Checks if proposed actions comply with regional rules and warranty terms.",
+        tools=[
+            check_regional_rules,
+            check_warranty_terms,
+        ],
+    )
 
-
-root_agent = Agent(
-    name="policy_compliance_agent",
-    model=DEFAULT_MODEL,
-    description="Checks suggested actions against regional rules, warranty terms, data-sharing agreements before execution.",
-    tools=[
-        check_regional_rules,
-        check_warranty_terms,
-        check_data_sharing_agreements,
-    ],
-)
+root_agent = create_agent()

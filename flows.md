@@ -116,3 +116,9 @@ This flow describes how to efficiently onboard a new dealer.
 ### AI Opportunities
 
 *   **Automated Onboarding (Interaction Hub & Vector Store):** An **"Onboarding Agent"** in the **Interaction Hub** automates the initial setup. It provides a consistent, guided experience by pulling personalized training materials from the **`Vector Store`**. This allows `Michael` (Account Manager) to focus his time on relationship-building rather than on administrative tasks.
+
+## Multi-Agent Synergy Scenarios
+
+*   **Out-of-Stock Mitigation:** `Investigation Agent` confirms shortages, `Policy & Compliance Agent` checks substitution rules, and an `Interaction Hub Agent` automatically updates the dealer with approved alternatives.
+*   **Installation Issue Escalation:** `Installer Support Agent` troubleshoots on-site, `Playbook Author Agent` captures novel fixes, and `Metrics & Insight Agent` surfaces systemic component failures for manufacturing feedback.
+*   **Proactive Maintenance Outreach:** `Metrics & Insight Agent` forecasts risk, `Policy & Compliance Agent` validates coverage, and `Playbook Author Agent` drafts proactive, compliant outreach so dealers receive actionable plans in advance.

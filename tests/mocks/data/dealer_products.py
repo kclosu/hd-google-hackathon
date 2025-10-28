@@ -1,13 +1,5 @@
 
-from dataclasses import dataclass
-
-@dataclass
-class DealerProduct:
-    id: str
-    product_id: str  # Foreign key to the generic Product
-    dealer_id: str   # Foreign key to the Dealer
-    brand_name: str
-    dealer_sku: str
+from hd_google_hackathon.domain.product import DealerProduct
 
 dealer_products = [
     # The Shade Store sells Duette as "The Shade Store Cellular Shades"
