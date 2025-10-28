@@ -23,6 +23,20 @@ Run `python main.py` for a quick smoke check, or `pytest` once additional tests 
 * Target measurable reductions in mean time to resolution, cross-region escalation effort, and redundant ERP queries to prove value.
 * Design for regional compliance (data residency, consent) by making federation, tenancy controls, and policy-aware routing first-class.
 
+## Key Concept: Privacy Boundaries & Data Ownership
+
+**Privacy Boundaries**
+- End customer PII stays with dealers
+- Manufacturer sees anonymized/aggregated customer data
+- Group-owned dealers share more data than independent dealers
+- Dealer performance data visible only to relevant parties
+
+**Data Ownership**
+- Dealers control customer data
+- Manufacturer gets insights, not raw customer data
+- Opt-in sharing for group-owned dealers
+- Compliance with data protection regulations
+
 ## Layered Architecture
 
 * Interaction Hub: Internal support portal and API routing layer with role-aware workspaces for support agents, account managers, planners.
