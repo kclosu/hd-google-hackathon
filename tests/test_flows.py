@@ -146,7 +146,9 @@ def test_component_out_of_stock_flow(investigation_agent):
     
     # First, find out which components are needed for the ordered product.
     dealer_product = product_repository.get_dealer_product_by_id(new_order.items[0].dealer_product_id, "dealer_1")
+    assert dealer_product is not None
     product = product_repository.get_product_by_id(dealer_product.product_id, "dealer_1")
+    assert product is not None
     print_system_event(f"Order requires components: {product.components}")
 
     # Now, have the agent check the stock for each component.
@@ -253,28 +255,6 @@ def test_get_orders_by_dealer():
     assert any(order.id == new_order.id for order in orders)
     print_system_event(f"Verified that order #{new_order.id} is in the list of orders for dealer '{dealer_id}'.")
 
-
-def test_dealer_onboarding_flow(onboarding_agent):
-    print_narrator("Executing Flow 7: New Flow - Dealer Onboarding")
-
-    # 1. A new dealer signs up.
-    new_dealer_info = {"name": "Budget Blinds", "region": "USA"}
-    print_system_event(f"New dealer has signed up: {new_dealer_info['name']}")
-
-    # 2. The Onboarding Agent initiates the process.
-    print_narrator("AI Opportunity: The Onboarding Agent automates the initial setup.")
-    training = onboarding_agent.tools[0](dealer_info=new_dealer_info)
-    print_agent_activity("Onboarding Agent", training['materials'])
-
-    # 3. The agent sets up the account.
-    account_setup = onboarding_agent.tools[1](dealer_info=new_dealer_info)
-    print_agent_activity("Onboarding Agent", account_setup['message'])
-
-    # 4. The agent schedules a follow-up.
-    follow_up = onboarding_agent.tools[2](dealer_info=new_dealer_info)
-    print_agent_activity("Onboarding Agent", follow_up['message'])
-
-    print_narrator("Flow 7 execution complete.")
 
 def test_dealer_onboarding_flow(onboarding_agent):
     print_narrator("Executing Flow 7: New Flow - Dealer Onboarding")
