@@ -1,6 +1,12 @@
 import pytest
 import sys
 import time
+import asyncio
+import ast
+import logging
+
+from google.adk.runners import InMemoryRunner
+from google.genai import types
 
 from .mocks.mock_order_repository import MockOrderRepository
 from .mocks.mock_product_repository import MockProductRepository
@@ -18,39 +24,49 @@ from hd_google_hackathon.agents.installer_support_agent.agent import create_agen
 from hd_google_hackathon.agents.configuration_agent.agent import create_agent as create_configuration_agent
 from hd_google_hackathon.agents.onboarding_agent.agent import create_agent as create_onboarding_agent
 
-# --- ANSI Color Codes for beautiful terminal output ---
-class colors:
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-# --- Helper functions for printing ---
-def print_narrator(text, delay=0.02):
-    for char in f"{colors.HEADER}{colors.BOLD}🎤 (Presenter):{colors.ENDC} {colors.WARNING}{text}{colors.ENDC}\n":
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    time.sleep(1)
+# --- Runner Fixture ---
 
-def print_agent_activity(agent_name, text, color=colors.CYAN, delay=0.01):
-    for char in f"{color}[{agent_name}]:{colors.ENDC} {text}\n":
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    time.sleep(0.5)
+class RunnerWrapper:
+    def __init__(self, agent):
+        self._agent = agent
+        self._runner = None
+        self._session = None
 
-def print_system_event(text, delay=0.01):
-    for char in f"{colors.BLUE}* {text} *{colors.ENDC}\n":
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    time.sleep(1)
+    async def setup(self):
+        self._runner = InMemoryRunner(agent=self._agent, app_name="agents")
+        self._session = await self._runner.session_service.create_session(app_name="agents", user_id="test_user")
+        return self
+
+    def run_and_get_tool_output(self, prompt, tool_name):
+        events = []
+        for event in self._runner.run(
+            user_id=self._session.user_id,
+            session_id=self._session.id,
+            new_message=types.Content(role="user", parts=[types.Part.from_text(text=prompt)]),
+        ):
+            events.append(event)
+        
+        tool_output = None
+        for event in events:
+            function_responses = event.get_function_responses()
+            if function_responses:
+                for response in function_responses:
+                    if response.name == tool_name:
+                        tool_output = response.response
+                        break
+            if tool_output:
+                break
+        return tool_output
+
+@pytest.fixture
+def runner_wrapper():
+    async def _get_wrapper(agent):
+        wrapper = RunnerWrapper(agent)
+        await wrapper.setup()
+        return wrapper
+    return _get_wrapper
 
 # --- Repository Fixtures ---
 
@@ -101,179 +117,198 @@ def onboarding_agent():
 
 # --- Flow Implementations ---
 
-def test_successful_new_order_flow(configuration_agent):
+@pytest.mark.asyncio
+async def test_successful_new_order_flow(configuration_agent, runner_wrapper):
+    """Tests the successful flow of a new order, from creation to completion."""
+    runner = await runner_wrapper(configuration_agent)
     from tests.mocks.mock_order_repository import MockOrderRepository
     order_repository = MockOrderRepository()
     # 1. David (Dealer) places an order for 10 "Duette® Honeycomb Shades".
-    print_system_event("Dealer 'David' places an order for 10 of product 'ss_duette' (Duette® Honeycomb Shades).")
-    # In a real system, this would come through an API call and be handled by a "Conversational Ordering Agent"
-    # For this simulation, we'll create the order directly using the repository.
+    logging.info("Dealer 'David' places an order for 10 of product 'ss_duette' (Duette® Honeycomb Shades).")
     new_order = order_repository.create_order("dealer_1", [{"dealer_product_id": "ss_duette", "quantity": 10}], tenant_id="dealer_1")
-    print_system_event(f"Order #{new_order.id} created with status '{new_order.status}'.")
+    logging.info(f"Order #{new_order.id} created with status '{new_order.status}'.")
 
     # 2. AI Opportunity: Automated Order Validation (Configuration Agent)
-    # This is a simplified representation. A real agent would check inventory, dependencies, etc.
     options = {"items": new_order.items}
-    validation_result = configuration_agent.tools[0](options=options, tenant_id="dealer_1")
-    print_agent_activity("Configuration Agent", f"Running validation for order #{new_order.id}...\n{validation_result}")
+    prompt = f"Validate configuration with options {options} for tenant 'dealer_1'"
+
+    validation_result = runner.run_and_get_tool_output(prompt, "validate_configuration")
+    logging.info(f"[Configuration Agent]: Running validation for order #{new_order.id}...\n{validation_result}")
     
     # 3. System updates order status
     order_repository.update_order_status(new_order.id, "in_progress", "dealer_1")
-    print_system_event(f"Order #{new_order.id} status updated to 'in_progress'.")
+    logging.info(f"Order #{new_order.id} status updated to 'in_progress'.")
 
     # 4. Manufacturing and Shipping
-    print_system_event("Manufacturing occurs at the plants...")
+    logging.info("Manufacturing occurs at the plants...")
     time.sleep(1)
     order_repository.update_order_status(new_order.id, "shipped", "dealer_1")
-    print_system_event(f"Order #{new_order.id} has been shipped.")
+    logging.info(f"Order #{new_order.id} has been shipped.")
 
     # 5. Final delivery and completion
     order_repository.update_order_status(new_order.id, "completed", "dealer_1")
-    print_system_event(f"Order #{new_order.id} has been successfully delivered and installed. Status: 'completed'.")
+    logging.info(f"Order #{new_order.id} has been successfully delivered and installed. Status: 'completed'.")
 
-def test_component_out_of_stock_flow(investigation_agent):
+@pytest.mark.asyncio
+async def test_component_out_of_stock_flow(investigation_agent, runner_wrapper):
+    """Tests the flow where a component for an order is out of stock, putting the order on hold."""
+    runner = await runner_wrapper(investigation_agent)
     from tests.mocks.mock_order_repository import MockOrderRepository
     from tests.mocks.mock_product_repository import MockProductRepository
     order_repository = MockOrderRepository()
     product_repository = MockProductRepository()
     # 1. David (Dealer) places an order for 5 "Silhouette® Window Shadings".
-    print_system_event("Dealer 'David' places an order for 5 of product 'ss_silhouette' (Silhouette® Window Shadings).")
-    # For this simulation, we'll create the order directly using the repository.
+    logging.info("Dealer 'David' places an order for 5 of product 'ss_silhouette' (Silhouette® Window Shadings).")
     new_order = order_repository.create_order("dealer_1", [{"dealer_product_id": "ss_silhouette", "quantity": 5}], tenant_id="dealer_1")
-    print_system_event(f"Order #{new_order.id} created with status '{new_order.status}'.")
+    logging.info(f"Order #{new_order.id} created with status '{new_order.status}'.")
 
     # 2. The Investigation Agent checks inventory and finds that fabric_2 is out of stock.
-    
-    # First, find out which components are needed for the ordered product.
     dealer_product = product_repository.get_dealer_product_by_id(new_order.items[0].dealer_product_id, "dealer_1")
     assert dealer_product is not None
     product = product_repository.get_product_by_id(dealer_product.product_id, "dealer_1")
     assert product is not None
-    print_system_event(f"Order requires components: {product.components}")
+    logging.info(f"Order requires components: {product.components}")
 
-    # Now, have the agent check the stock for each component.
     for component_id in product.components:
-        stock_check_result = investigation_agent.tools[1](component_id=component_id)
+        prompt = f"Check stock for component '{component_id}'"
+        stock_check_result = runner.run_and_get_tool_output(prompt, "check_component_stock")
+        
         stock_level = stock_check_result.get("stock", -1)
         if stock_level == 0:
-            print_agent_activity("Investigation Agent", f"Checking stock for component '{component_id}'... {colors.FAIL}FAILURE: Component is out of stock.{colors.ENDC}")
+            logging.info(f"[Investigation Agent]: Checking stock for component '{component_id}'... FAILURE: Component is out of stock.")
             # 3. System puts the order on hold
             order_repository.update_order_status(new_order.id, "on_hold", "dealer_1")
-            print_system_event(f"Order #{new_order.id} status updated to 'on_hold'. An alert has been raised for the planner.")
+            logging.info(f"Order #{new_order.id} status updated to 'on_hold'. An alert has been raised for the planner.")
             break
         else:
-            print_agent_activity("Investigation Agent", f"Checking stock for component '{component_id}'... SUCCESS: {stock_level} units in stock.")
+            logging.info(f"[Investigation Agent]: Checking stock for component '{component_id}'... SUCCESS: {stock_level} units in stock.")
 
+@pytest.mark.asyncio
+async def test_damaged_product_flow(support_triage_agent, investigation_agent, policy_compliance_agent, playbook_author_agent, runner_wrapper):
+    """Tests the flow for handling a damaged product claim, involving multiple agents for triage, investigation, compliance, and knowledge capture."""
+    support_triage_runner = await runner_wrapper(support_triage_agent)
+    investigation_runner = await runner_wrapper(investigation_agent)
+    policy_compliance_runner = await runner_wrapper(policy_compliance_agent)
+    playbook_author_runner = await runner_wrapper(playbook_author_agent)
 
-def test_damaged_product_flow(support_triage_agent, investigation_agent, policy_compliance_agent, playbook_author_agent):
     # 1. David (Dealer) creates a new support ticket (Claim).
     dealer_request = "The Duette shades for order #order_1 arrived damaged. The box was crushed. Please advise."
-    print_system_event(f"INCOMING CLAIM from 'David': {dealer_request}")
+    logging.info(f"INCOMING CLAIM from 'David': {dealer_request}")
 
     # 2. Automated Triage & Enrichment (Support Triage Agent)
-    classification = support_triage_agent.tools[0](request=dealer_request)
-    print_agent_activity("Support Triage Agent", f"Intent: '{classification['type']}'.")
-    enriched_request = support_triage_agent.tools[1](request=dealer_request)
-    print_agent_activity("Support Triage Agent", f"Context added: {enriched_request['enriched_request']}")
+    classification = support_triage_runner.run_and_get_tool_output(f"Classify this request: {dealer_request}", "classify_request")
+    logging.info(f"[Support Triage Agent]: Intent: '{classification['type']}'.")
+    enriched_request = support_triage_runner.run_and_get_tool_output(f"Enrich this request: {dealer_request}", "enrich_request")
+    logging.info(f"[Support Triage Agent]: Context added: {enriched_request['enriched_request']}")
 
     # 3. Automated Investigation (Investigation Agent)
-    order_history = investigation_agent.tools[0](order_id="order_1")
-    print_agent_activity("Investigation Agent", f"Pulling history for order #order_1... SUCCESS: {order_history['history']}")
-    anomalies = investigation_agent.tools[4](data={})
-    resolution = investigation_agent.tools[5](anomalies=anomalies['anomalies'])
-    print_agent_activity("Investigation Agent", f"SOLUTION_PROPOSED: {resolution['resolution']}")
+    order_history = investigation_runner.run_and_get_tool_output("Pull history for order #order_1", "pull_order_history")
+    logging.info(f"[Investigation Agent]: Pulling history for order #order_1... SUCCESS: {order_history['history']}")
+    anomalies = investigation_runner.run_and_get_tool_output("Compare data {} with standards to find anomalies", "compare_with_standards")
+    resolution = investigation_runner.run_and_get_tool_output(f"Propose resolution for these anomalies: {anomalies['anomalies']}", "propose_resolution")
+    logging.info(f"[Investigation Agent]: SOLUTION_PROPOSED: {resolution['resolution']}")
 
     # 4. Automated Compliance Check (Policy & Compliance Agent)
     action_to_check = resolution['resolution']
-    regional_rules_ok = policy_compliance_agent.tools[0](action=action_to_check)
-    print_agent_activity("Policy & Compliance Agent", f"Checking regional rules... {'Compliant' if regional_rules_ok['compliant'] else 'Not Compliant'}")
-    warranty_terms_ok = policy_compliance_agent.tools[1](action=action_to_check)
-    print_agent_activity("Policy & Compliance Agent", f"Checking warranty terms... {'Compliant' if warranty_terms_ok['compliant'] else 'Not Compliant'}")
-    print_agent_activity("Policy & Compliance Agent", "ACTION_APPROVED.", color=colors.GREEN)
+    regional_rules_ok = policy_compliance_runner.run_and_get_tool_output(f"Check regional rules for action: {action_to_check}", "check_regional_rules")
+    logging.info(f"[Policy & Compliance Agent]: Checking regional rules... {'Compliant' if regional_rules_ok['compliant'] else 'Not Compliant'}")
+    warranty_terms_ok = policy_compliance_runner.run_and_get_tool_output(f"Check warranty terms for action: {action_to_check}", "check_warranty_terms")
+    logging.info(f"[Policy & Compliance Agent]: Checking warranty terms... {'Compliant' if warranty_terms_ok['compliant'] else 'Not Compliant'}")
+    logging.info("[Policy & Compliance Agent]: ACTION_APPROVED.")
 
     # 5. Automated Knowledge Capture (Playbook Author Agent)
-    playbook = playbook_author_agent.tools[0](case_id="claim_123")
-    print_agent_activity("Playbook Author Agent", playbook['playbook'])
+    playbook = playbook_author_runner.run_and_get_tool_output("Summarize case claim_123", "summarize_case")
+    logging.info(f"[Playbook Author Agent]: {playbook['playbook']}")
 
-
-def test_installation_issue_flow(installer_support_agent):
+@pytest.mark.asyncio
+async def test_installation_issue_flow(installer_support_agent, runner_wrapper):
+    """Tests the flow for handling an installation issue, where an installer is missing a part."""
+    runner = await runner_wrapper(installer_support_agent)
     # 1. Installer discovers a missing part during installation.
     installer_issue = "I'm on site installing a Luminette shade and I'm missing a part for the headrail."
-    print_system_event(f"INCOMING CALL from Installer: {installer_issue}")
+    logging.info(f"INCOMING CALL from Installer: {installer_issue}")
 
     # 2. On-Site Installer Support (Installer Support Agent)
-    solution = installer_support_agent.tools[0](issue=installer_issue)
-    print_agent_activity("Installer Support Agent", f"Searching manuals for: '{installer_issue}'...\nSOLUTION: {solution['solution']}")
+    solution = runner.run_and_get_tool_output(f"Find solution for this issue: {installer_issue}", "find_solution_in_manuals")
+    logging.info(f"[Installer Support Agent]: Searching manuals for: '{installer_issue}'...\nSOLUTION: {solution['solution']}")
 
     # 3. The agent can also provide component details if needed.
-    components = installer_support_agent.tools[1](product_id="luminette")
-    print_agent_activity("Installer Support Agent", f"Providing component list for product 'luminette': {components['components']}")
+    components = runner.run_and_get_tool_output("Get components for product with id 'luminette'", "get_product_components")
+    logging.info(f"[Installer Support Agent]: Providing component list for product 'luminette': {components['components']}")
 
-
-def test_proactive_maintenance_flow(metrics_insight_agent):
+@pytest.mark.asyncio
+async def test_proactive_maintenance_flow(metrics_insight_agent, runner_wrapper):
+    """Tests the flow for proactive maintenance, where the system predicts a future failure and notifies the dealer."""
+    runner = await runner_wrapper(metrics_insight_agent)
     # 1. The Metrics & Insight Agent monitors product data.
-    print_system_event("The Metrics & Insight Agent runs its scheduled analysis of field data.")
+    logging.info("The Metrics & Insight Agent runs its scheduled analysis of field data.")
 
     # 2. The agent identifies a product with a high risk of failure.
-    prediction = metrics_insight_agent.tools[1](tenant_id="dealer_1")
-    print_agent_activity("Metrics & Insight Agent", f"ANALYSIS COMPLETE: {prediction['prediction']}")
+    prediction = runner.run_and_get_tool_output("Predict maintenance needs for tenant dealer_1", "predict_maintenance_needs")
+    logging.info(f"[Metrics & Insight Agent]: ANALYSIS COMPLETE: {prediction['prediction']}")
 
     # 3. The agent proactively notifies the dealer.
-    print_system_event(f"Proactive alert sent to dealer 'David': {prediction['recommendation']}")
+    logging.info(f"Proactive alert sent to dealer 'David': {prediction['recommendation']}")
 
-
-def test_complex_product_configuration_flow(configuration_agent):
+@pytest.mark.asyncio
+async def test_complex_product_configuration_flow(configuration_agent, runner_wrapper):
+    """Tests the flow for configuring a complex product, including validation and quote generation."""
+    runner = await runner_wrapper(configuration_agent)
     # 1. David (Dealer) needs to order a complex product.
-    print_system_event("Dealer 'David' starts configuring a complex product.")
+    logging.info("Dealer 'David' starts configuring a complex product.")
     config_options = {"fabric": "fabric_1", "headrail": "headrail_1", "motorized": True, "quantity": 2}
 
     # 2. The Configuration Agent guides David through the options.
-    validation_result = configuration_agent.tools[0](options=config_options, tenant_id="dealer_1")
-    print_agent_activity("Configuration Agent", f"Validating configuration: {config_options}... {'VALID' if validation_result['valid'] else 'INVALID'}")
+    validation_result = runner.run_and_get_tool_output(f"Validate configuration with options {config_options} for tenant 'dealer_1'", "validate_configuration")
+    logging.info(f"[Configuration Agent]: Validating configuration: {config_options}... {'VALID' if validation_result['valid'] else 'INVALID'}")
 
     # 3. The agent generates a quote.
     if validation_result['valid']:
-        quote = configuration_agent.tools[1](config=config_options, tenant_id="dealer_1")
-        print_agent_activity("Configuration Agent", f"Configuration is valid. Quote: {quote['quote']}")
-        print_system_event("Dealer 'David' confirms the order.")
+        quote = runner.run_and_get_tool_output(f"Generate quote for config {config_options} for tenant 'dealer_1'", "generate_quote")
+        logging.info(f"[Configuration Agent]: Configuration is valid. Quote: {quote['quote']}")
+        logging.info("Dealer 'David' confirms the order.")
     else:
-        print_agent_activity("Configuration Agent", f"Configuration is invalid: {validation_result['reason']}", color=colors.FAIL)
+        logging.info(f"[Configuration Agent]: Configuration is invalid: {validation_result['reason']}")
 
 def test_get_orders_by_dealer():
+    """Tests the retrieval of all orders for a specific dealer."""
     from tests.mocks.mock_order_repository import MockOrderRepository
     order_repository = MockOrderRepository()
     # 1. Create a new order for a specific dealer.
     dealer_id = "dealer_2"
     new_order = order_repository.create_order(dealer_id, [{"dealer_product_id": "ss_duette", "quantity": 1}], tenant_id=dealer_id)
-    print_system_event(f"Order #{new_order.id} created for dealer '{dealer_id}'.")
+    logging.info(f"Order #{new_order.id} created for dealer '{dealer_id}'.")
 
     # 2. Retrieve all orders for that dealer.
     orders = order_repository.get_orders_by_dealer(dealer_id, tenant_id="any_tenant")
-    print_system_event(f"Found {len(orders)} orders for dealer '{dealer_id}'.")
+    logging.info(f"Found {len(orders)} orders for dealer '{dealer_id}'.")
 
     # 3. Verify that the newly created order is in the list.
     assert any(order.id == new_order.id for order in orders)
-    print_system_event(f"Verified that order #{new_order.id} is in the list of orders for dealer '{dealer_id}'.")
+    logging.info(f"Verified that order #{new_order.id} is in the list of orders for dealer '{dealer_id}'.")
 
 
-def test_dealer_onboarding_flow(onboarding_agent):
-    print_narrator("Executing Flow 7: New Flow - Dealer Onboarding")
+@pytest.mark.asyncio
+async def test_dealer_onboarding_flow(onboarding_agent, runner_wrapper):
+    """Tests the automated onboarding flow for a new dealer."""
+    runner = await runner_wrapper(onboarding_agent)
+    logging.info("Executing Flow 7: New Flow - Dealer Onboarding")
 
     # 1. A new dealer signs up.
     new_dealer_info = {"name": "Budget Blinds", "region": "USA"}
-    print_system_event(f"New dealer has signed up: {new_dealer_info['name']}")
+    logging.info(f"New dealer has signed up: {new_dealer_info['name']}")
 
     # 2. The Onboarding Agent initiates the process.
-    print_narrator("AI Opportunity: The Onboarding Agent automates the initial setup.")
-    training = onboarding_agent.tools[0](dealer_info=new_dealer_info)
-    print_agent_activity("Onboarding Agent", training['materials'])
+    logging.info("AI Opportunity: The Onboarding Agent automates the initial setup.")
+    training = runner.run_and_get_tool_output(f"Provide training materials for dealer: {new_dealer_info}", "provide_training_materials")
+    logging.info(f"[Onboarding Agent]: {training['materials']}")
 
     # 3. The agent sets up the account.
-    account_setup = onboarding_agent.tools[1](dealer_info=new_dealer_info)
-    print_agent_activity("Onboarding Agent", account_setup['message'])
+    account_setup = runner.run_and_get_tool_output(f"Set up account for dealer: {new_dealer_info}", "setup_account")
+    logging.info(f"[Onboarding Agent]: {account_setup['message']}")
 
     # 4. The agent schedules a follow-up.
-    follow_up = onboarding_agent.tools[2](dealer_info=new_dealer_info)
-    print_agent_activity("Onboarding Agent", follow_up['message'])
+    follow_up = runner.run_and_get_tool_output(f"Schedule follow-up for dealer: {new_dealer_info}", "schedule_follow_up")
+    logging.info(f"[Onboarding Agent]: {follow_up['message']}")
 
-    print_narrator("Flow 7 execution complete.")
+    logging.info("Flow 7 execution complete.")
