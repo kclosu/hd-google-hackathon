@@ -8,15 +8,26 @@ from hd_google_hackathon.agents.support_triage_agent import agent as support_tri
 from hd_google_hackathon.agents.investigation_agent import create_agent as create_investigation_agent
 from hd_google_hackathon.agents.policy_compliance_agent import agent as policy_compliance_agent
 from hd_google_hackathon.agents.erp_sherpa_agent import agent as erp_sherpa_agent
+from hd_google_hackathon.agents.metrics_insight_agent import create_agent as create_metrics_insight_agent
 from hd_google_hackathon.agents.playbook_author_agent import agent as playbook_author_agent
 from hd_google_hackathon.agents.installer_support_agent import agent as installer_support_agent
 from tests.mocks.mock_product_repository import MockProductRepository
 from tests.mocks.mock_order_repository import MockOrderRepository
 from tests.mocks.mock_component_repository import MockComponentRepository
+from tests.mocks.mock_dealer_repository import MockDealerRepository
 
 # Create the agent with the appropriate repository
 product_repo = MockProductRepository()
+order_repo = MockOrderRepository()
+dealer_repo = MockDealerRepository()
+component_repo = MockComponentRepository()
+
 installer_support_agent.root_agent = installer_support_agent.create_agent(product_repo=product_repo)
+metrics_insight_agent = create_metrics_insight_agent(
+    dealer_repo=dealer_repo,
+    order_repo=order_repo,
+    product_repo=product_repo,
+)
 
 
 # --- ANSI Color Codes for beautiful terminal output ---

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from hd_google_hackathon.data.repositories.product_repository import ProductRepository
 from hd_google_hackathon.domain.product import Product, DealerProduct
@@ -15,6 +15,10 @@ class MockProductRepository(ProductRepository):
         self._dealer_products: Dict[str, DealerProduct] = {
             dealer_product.id: dealer_product for dealer_product in MOCK_DEALER_PRODUCTS
         }
+
+    def get_products(self) -> List[Product]:
+        """Return all available products in insertion order."""
+        return list(self._products.values())
 
     def get_product_by_id(self, product_id: str, tenant_id: str) -> Optional[Product]:
         """This method retrieves a product by its ID."""

@@ -16,3 +16,7 @@ class MockDealerRepository(DealerRepository):
         """This method retrieves a dealer by its ID."""
         # The tenant_id is not used in this mock implementation.
         return self._dealers.get(dealer_id)
+
+    def get_all_dealers(self) -> list[Dealer]:
+        """This method retrieves all dealers."""
+        return list(self._dealers.values())
