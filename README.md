@@ -24,6 +24,7 @@ Use [uv](https://docs.astral.sh/uv/) for dependency and workflow management.
 - Sync dependencies with `uv sync --extra dev` to pull runtime and dev tooling (pytest, pytest-asyncio, etc.).
 - Alternatively, install editable dependencies with `uv pip install -e ".[dev]"` if you prefer to control environment activation manually.
 - Run project commands through uv, e.g. `uv run python main.py` for a smoke check or `uv run pytest` for the test suite.
+- Explore the agent catalog with `uv run adk web src/hd_google_hackathon/agents`, which serves the ADK web UI for local development.
 
 ## North Star & Guardrails
 
