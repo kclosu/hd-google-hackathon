@@ -18,12 +18,20 @@ dealer_products = [
         brand_name="BTG Honeycomb Architella",
         dealer_sku="BTG-HC-A-10"
     ),
-    # The Shade Store sells Silhouette as "The Shade Store Sheer Shadings"
+    # Hillary's sells Luminette as "Hillary's Luminette"
+    DealerProduct(
+        id="ss_luminette",
+        product_id="luminette",
+        dealer_id="dealer_3",
+        brand_name="Hillary's Luminette",
+        dealer_sku="SS-LUMIN-001"
+    ),
+    # The Shade Store sells Silhouette as "SS Silhouette"
     DealerProduct(
         id="ss_silhouette",
         product_id="silhouette",
         dealer_id="dealer_1",
-        brand_name="The Shade Store Sheer Shadings",
-        dealer_sku="SS-SHEER-001"
+        brand_name="The Shade Store Silhouette",
+        dealer_sku="SS-SIL-001"
     ),
 ]

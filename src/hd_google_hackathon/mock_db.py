@@ -82,50 +82,11 @@ def initialize_schema(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def seed_sample_data(conn: sqlite3.Connection) -> None:
-    """Insert a small set of sample rows if tables are empty."""
-    cur = conn.cursor()
-
-    cur.execute("SELECT count(1) FROM products")
-    if cur.fetchone()[0] == 0:
-        cur.executemany(
-            "INSERT INTO products (id, sku, name, price_cents) VALUES (?, ?, ?, ?)",
-            [
-                ("prod-1", "SKU-100", "Hydro Pump", 19999),
-                ("prod-2", "SKU-101", "Valve Assembly", 4999),
-            ],
-        )
-
-    cur.execute("SELECT count(1) FROM dealers")
-    if cur.fetchone()[0] == 0:
-        cur.executemany(
-            "INSERT INTO dealers (id, name, region) VALUES (?, ?, ?)",
-            [("dealer-1", "Acme Dealers", "north"), ("dealer-2", "Beta Supplies", "west")],
-        )
-
-    cur.execute("SELECT count(1) FROM orders")
-    if cur.fetchone()[0] == 0:
-        cur.execute(
-            "INSERT INTO orders (id, dealer_id, status, created_at) VALUES (?, ?, ?, datetime('now'))",
-            ("order-1", "dealer-1", "new"),
-        )
-
-    cur.execute("SELECT count(1) FROM order_items")
-    if cur.fetchone()[0] == 0:
-        cur.execute(
-            "INSERT INTO order_items (id, order_id, product_id, quantity) VALUES (?, ?, ?, ?)",
-            ("oi-1", "order-1", "prod-1", 2),
-        )
-
-    conn.commit()
-
-
 def get_products(conn: sqlite3.Connection) -> List[Dict[str, Any]]:
     cur = conn.cursor()
     cur.execute("SELECT id, sku, name, price_cents FROM products")
     rows = cur.fetchall()
     return [dict(id=r[0], sku=r[1], name=r[2], price_cents=r[3]) for r in rows]
-
 
 def get_orders_for_dealer(conn: sqlite3.Connection, dealer_id: str):
     cur = conn.cursor()
@@ -136,7 +97,6 @@ def get_orders_for_dealer(conn: sqlite3.Connection, dealer_id: str):
 __all__ = [
     "connect_db",
     "initialize_schema",
-    "seed_sample_data",
     "get_products",
     "get_orders_for_dealer",
 ]

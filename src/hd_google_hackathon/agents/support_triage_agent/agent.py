@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 from google.adk.agents import Agent
 from google import genai
+from pydantic import BaseModel, Field
+from google.genai import types
 
 # from utils import SYSTEM_PROMPT_AFTERSALES, SYSTEM_PROMPT_QUOTES
 
@@ -172,6 +174,7 @@ Respond **only** with a valid Python dictionary in exactly this shape:
 Do not include any explanation or extra text outside the Python dictionary."""
 
 
+
 load_dotenv()
 
 CLIENT = genai.Client(
@@ -180,7 +183,6 @@ CLIENT = genai.Client(
     location=os.getenv("GOOGLE_CLOUD_LOCATION"),
 )
 
-from pydantic import BaseModel, Field
 
 class Classification(BaseModel):
     """The classification of the request."""
@@ -189,14 +191,28 @@ class Classification(BaseModel):
     reasoning: str = Field(..., description="The reasoning for the classification.")
 
 
-from google.genai import types
+class AftersalesTriage(BaseModel):
+    """The triage result."""
+    label: str = Field(..., description="The triage label.")
+    action: str | None = Field(None, description="The action to be taken.")
+    suggestion: str | None = Field(None, description="A suggestion for the request.")
+    reasoning: str = Field(..., description="The reasoning for the triage.")
+
+
+class QuotesTriage(BaseModel):
+    """The triage result for quotes."""
+    label: str = Field(..., description="The triage label.")
+    suggestion: str | None = Field(None, description="A suggestion for the request.")
+    reasoning: str = Field(..., description="The reasoning for the triage.")
+    items: dict[str, int] = Field(..., description="The items requested with their quantities.")
+
 
 def classify_request(user_prompt: str, model_name: str = "gemini-2.0-flash") -> Classification:
     """Classifies the type of inbound request (e.g., Order, Technical Support, etc....)."""
 
     response = CLIENT.models.generate_content(
         model=model_name,
-        contents=[SYSTEM_PROMPT_AFTERSALES, user_prompt],
+        contents=[SYSTEM_PROMPT_CLASSIFICATION, user_prompt],
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=Classification,
@@ -211,9 +227,13 @@ def aftersales_triage_tool(user_prompt: str, model_name: str = "gemini-2.0-flash
     response = CLIENT.models.generate_content(
         model=model_name,
         contents=[SYSTEM_PROMPT_AFTERSALES, user_prompt],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=AftersalesTriage,
+        )
     )
     if response.text:
-        return json.loads(response.text)
+        return AftersalesTriage.model_validate_json(response.text)
     return {}
 
 
@@ -223,9 +243,13 @@ def quote_triage_tool(user_prompt: str, model_name: str = "gemini-2.0-flash") ->
     response = CLIENT.models.generate_content(
         model=model_name,
         contents=[SYSTEM_PROMPT_QUOTES, user_prompt],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=QuotesTriage,
+        )
     )
     if response.text:
-        return json.loads(response.text)
+        return QuotesTriage.model_validate_json(response.text)
     return {}
 
 
