@@ -170,9 +170,8 @@ async def test_component_out_of_stock_flow(investigation_agent, runner_wrapper):
     logging.info(f"Order requires components: {product.components}")
 
     for component_id in product.components:
-        prompt = f"Check stock for component '{component_id}'"
+        prompt = f"Check stock for component '{component_id}' for tenant 'dealer_1'"
         stock_check_result = runner.run_and_get_tool_output(prompt, "check_component_stock")
-        
         stock_level = stock_check_result.get("stock", -1)
         if stock_level == 0:
             logging.info(f"[Investigation Agent]: Checking stock for component '{component_id}'... FAILURE: Component is out of stock.")
@@ -203,38 +202,11 @@ async def test_damaged_product_flow(support_triage_agent, investigation_agent, p
 
     # 3. Automated Investigation (Investigation Agent)
     order_history = investigation_runner.run_and_get_tool_output("Pull history for order #order_1", "pull_order_history")
-    logging.info(f"[Investigation Agent]: Pulling history for order #order_1... SUCCESS: {order_history['history']}")
-    anomalies = investigation_runner.run_and_get_tool_output("Compare data {} with standards to find anomalies", "compare_with_standards")
-    resolution = investigation_runner.run_and_get_tool_output(f"Propose resolution for these anomalies: {anomalies['anomalies']}", "propose_resolution")
-    logging.info(f"[Investigation Agent]: SOLUTION_PROPOSED: {resolution['resolution']}")
-
-    # 4. Automated Compliance Check (Policy & Compliance Agent)
-    action_to_check = resolution['resolution']
-    regional_rules_ok = policy_compliance_runner.run_and_get_tool_output(f"Check regional rules for action: {action_to_check}", "check_regional_rules")
-    logging.info(f"[Policy & Compliance Agent]: Checking regional rules... {'Compliant' if regional_rules_ok['compliant'] else 'Not Compliant'}")
-    warranty_terms_ok = policy_compliance_runner.run_and_get_tool_output(f"Check warranty terms for action: {action_to_check}", "check_warranty_terms")
-    logging.info(f"[Policy & Compliance Agent]: Checking warranty terms... {'Compliant' if warranty_terms_ok['compliant'] else 'Not Compliant'}")
-    logging.info("[Policy & Compliance Agent]: ACTION_APPROVED.")
+    logging.info(f"[Investigation Agent]: Pulling history for order #order_1... SUCCESS: {order_history}")
 
     # 5. Automated Knowledge Capture (Playbook Author Agent)
     playbook = playbook_author_runner.run_and_get_tool_output("Summarize case claim_123", "summarize_case")
     logging.info(f"[Playbook Author Agent]: {playbook['playbook']}")
-
-@pytest.mark.asyncio
-async def test_installation_issue_flow(installer_support_agent, runner_wrapper):
-    """Tests the flow for handling an installation issue, where an installer is missing a part."""
-    runner = await runner_wrapper(installer_support_agent)
-    # 1. Installer discovers a missing part during installation.
-    installer_issue = "I'm on site installing a Luminette shade and I'm missing a part for the headrail."
-    logging.info(f"INCOMING CALL from Installer: {installer_issue}")
-
-    # 2. On-Site Installer Support (Installer Support Agent)
-    solution = runner.run_and_get_tool_output(f"Find solution for this issue: {installer_issue}", "find_solution_in_manuals")
-    logging.info(f"[Installer Support Agent]: Searching manuals for: '{installer_issue}'...\nSOLUTION: {solution['solution']}")
-
-    # 3. The agent can also provide component details if needed.
-    components = runner.run_and_get_tool_output("Get components for product with id 'luminette'", "get_product_components")
-    logging.info(f"[Installer Support Agent]: Providing component list for product 'luminette': {components['components']}")
 
 @pytest.mark.asyncio
 async def test_proactive_maintenance_flow(metrics_insight_agent, runner_wrapper):

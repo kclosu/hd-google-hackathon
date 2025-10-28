@@ -45,3 +45,12 @@ class MockOrderRepository(OrderRepository):
         )
         self._orders[new_id] = new_order
         return new_order
+
+    def update_shipment_priority(self, order_id: str, priority: str, tenant_id: str) -> Optional[Order]:
+        """This method updates the shipment priority of an order."""
+        # The tenant_id is not used in this mock implementation.
+        order = self._orders.get(order_id)
+        if order:
+            order.shipment_priority = priority
+            order.history.append(f"Shipment priority updated to {priority}")
+        return order

@@ -12,4 +12,5 @@ class Order:
     dealer_id: str
     items: List[OrderItem]
     status: str # e.g., 'new', 'in_progress', 'shipped', 'delivered'
+    shipment_priority: str = 'standard' # e.g., 'standard', 'expedited'
     history: List[str] = field(default_factory=list)

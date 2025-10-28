@@ -17,6 +17,14 @@ hd-google-hackathon/
 
 Run `python main.py` for a quick smoke check, or `pytest` once additional tests are added (the suite exercises the mock data fixtures).
 
+## Development Setup
+
+Use [uv](https://docs.astral.sh/uv/) for dependency and workflow management.
+- Install `uv` (see the linked docs for platform-specific steps).
+- Sync dependencies with `uv sync --extra dev` to pull runtime and dev tooling (pytest, pytest-asyncio, etc.).
+- Alternatively, install editable dependencies with `uv pip install -e ".[dev]"` if you prefer to control environment activation manually.
+- Run project commands through uv, e.g. `uv run python main.py` for a smoke check or `uv run pytest` for the test suite.
+
 ## North Star & Guardrails
 
 * Unify internal support experience around dealer-facing issues without forcing a single dealer tech stack; rely on protocols, data contracts, and lightweight adapters.

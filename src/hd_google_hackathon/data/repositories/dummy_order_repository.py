@@ -18,3 +18,6 @@ class DummyOrderRepository(OrderRepository):
 
     def create_order(self, dealer_id: str, items: List[dict], tenant_id: str) -> Order:
         return Order(id="dummy_order", dealer_id=dealer_id, items=[], status="new")
+
+    def update_shipment_priority(self, order_id: str, priority: str, tenant_id: str) -> Optional[Order]:
+        return None

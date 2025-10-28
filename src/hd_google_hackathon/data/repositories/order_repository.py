@@ -19,3 +19,7 @@ class OrderRepository(ABC):
     @abstractmethod
     def create_order(self, dealer_id: str, items: List[dict], tenant_id: str) -> Order:
         pass
+
+    @abstractmethod
+    def update_shipment_priority(self, order_id: str, priority: str, tenant_id: str) -> Optional[Order]:
+        pass
