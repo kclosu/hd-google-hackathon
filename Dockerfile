@@ -21,6 +21,10 @@ RUN pip install -e . --upgrade pip setuptools wheel \
 
 # (repository already copied above)
 
+# Create a persistent data directory and seed a mock sqlite DB into it during build.
+RUN mkdir -p /data \
+    && python scripts/seed_mock_db.py || echo "Seeding script failed; continuing without seeded DB"
+
 # Expose a default port - ADK web uses 8000 as default or another port; leave as a hint
 EXPOSE 8000
 

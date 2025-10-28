@@ -1,5 +1,6 @@
 from google.adk.agents import Agent
 from hd_google_hackathon.config import DEFAULT_MODEL
+from hd_google_hackathon.mock_db import connect_db, get_products, get_orders_for_dealer
 
 def synthesize_kpis() -> dict:
     """Synthesizes operational KPIs from various data sources."""
@@ -11,8 +12,26 @@ def surface_systemic_issues() -> dict:
 
 def provide_insights() -> dict:
     """Provides data-driven insights to support business decisions."""
-    # Placeholder implementation
-    return {"status": "success", "insights": ["Dealer training for product Y needs improvement."]}
+    try:
+        conn = connect_db(read_only=True)
+        products = get_products(conn)
+        # For demo, compute a simple metric: orders per dealer for seeded dealers
+        dealer_ids = ["dealer-1", "dealer-2"]
+        dealer_order_counts = {d: len(get_orders_for_dealer(conn, d)) for d in dealer_ids}
+        conn.close()
+
+        insights = []
+        if not products:
+            insights.append("No products found in the mock DB.")
+        else:
+            insights.append(f"Found {len(products)} products; top sample: {products[0]['name']}")
+
+        for dealer, count in dealer_order_counts.items():
+            insights.append(f"Dealer {dealer} has {count} orders in the mock DB.")
+
+        return {"status": "success", "insights": insights}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 root_agent = Agent(
