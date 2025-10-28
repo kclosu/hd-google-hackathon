@@ -14,7 +14,7 @@ repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root / "src"))
 sys.path.insert(0, str(repo_root))
 
-from hd_google_hackathon.mock_db import connect_db, initialize_schema, seed_sample_data
+from hd_google_hackathon.mock_db import connect_db, initialize_schema
 
 from tests.mocks.data.products import products as seed_products
 from tests.mocks.data.dealers import dealers as seed_dealers
@@ -124,9 +124,6 @@ def main() -> None:
     try:
         initialize_schema(conn)
         upgrade_schema(conn)
-
-        # Seed legacy sample data first, then upsert the richer fixtures.
-        seed_sample_data(conn)
 
         # Upsert core dimension tables.
         product_rows = [
